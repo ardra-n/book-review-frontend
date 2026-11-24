@@ -1,8 +1,6 @@
 
 import React from 'react'
-
-import { Routes, Route, Navigate } from 'react-router-dom'
-
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Box } from '@mui/material'
 
 import Header from './components/Header'
@@ -22,6 +20,10 @@ import LoginPage from './pages/Login'
 
 function App() {
 
+    const location = useLocation()
+
+const isLoggedIn = Boolean(localStorage.getItem('loggedUser'))
+
     return (
 
         <Box sx={{
@@ -29,10 +31,9 @@ function App() {
             backgroundColor: '#FFF7ED'
         }}>
 
-            {/* Header */}
-            <Header />
+            {/* Show Header only after login */}
+            {isLoggedIn && <Header />}
 
-            {/* Main Content */}
             <Box
                 component="main"
                 sx={{
@@ -44,38 +45,62 @@ function App() {
 
                 <Routes>
 
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    {/* Home Route */}
+                    <Route
+                        path="/"
+                        element={
+                            isLoggedIn ?
+                                <Navigate to="/dashboard" replace /> :
+                                <Navigate to="/login" replace />
+                        }
+                    />
 
-                    <Route path="/dashboard" element={<Dashboard />} />
+                    {/* Login and Register */}
+                    <Route
+                        path="/login"
+                        element={
+                            isLoggedIn ?
+                                <Navigate to="/dashboard" replace /> :
+                                <LoginPage />
+                        }
+                    />
 
-                    <Route path="/books" element={<Books />} />
+                    <Route
+                        path="/register"
+                        element={
+                            isLoggedIn ?
+                                <Navigate to="/dashboard" replace /> :
+                                <Register />
+                        }
+                    />
 
-                    <Route path="/reviews" element={<Reviews />} />
+                    {/* Protected Pages */}
+                    <Route path="/dashboard" element={isLoggedIn ? <Dashboard /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/calendar" element={<Calendar />} />
+                    <Route path="/books" element={isLoggedIn ? <Books /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/goals" element={<Goals />} />
+                    <Route path="/reviews" element={isLoggedIn ? <Reviews /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/reports" element={<Reports />} />
+                    <Route path="/calendar" element={isLoggedIn ? <Calendar /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/add-book" element={<AddBook />} />
+                    <Route path="/goals" element={isLoggedIn ? <Goals /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/view-book/:id" element={<ViewBook />} />
+                    <Route path="/reports" element={isLoggedIn ? <Reports /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/edit-book/:id" element={<EditBook />} />
+                    <Route path="/add-book" element={isLoggedIn ? <AddBook /> : <Navigate to="/login" replace />} />
 
-                    <Route path="/register" element={<Register />} />
+                    <Route path="/view-book/:id" element={isLoggedIn ? <ViewBook /> : <Navigate to="/login" replace />} />
 
+                    <Route path="/edit-book/:id" element={isLoggedIn ? <EditBook /> : <Navigate to="/login" replace />} />
+
+                    {/* Page Not Found */}
                     <Route path="*" element={<Pnf />} />
-
-                    <Route path="/login" element={<LoginPage />} />
 
                 </Routes>
 
             </Box>
 
         </Box>
-
     )
 }
 

@@ -6,13 +6,10 @@ import {
     Toolbar,
     Box,
     Typography,
-    IconButton,
-    Avatar,
     Button
 } from '@mui/material'
 
 import {
-    NotificationsNone,
     MenuBook
 } from '@mui/icons-material'
 
