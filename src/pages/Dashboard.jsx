@@ -1,794 +1,706 @@
-import React, { useState } from 'react'
+
+import React, { useEffect, useState } from 'react'
 
 import {
     Box,
     Typography,
-    Card,
-    CardContent,
     Button,
-    LinearProgress,
     Rating,
-    Chip
+    CircularProgress
 } from '@mui/material'
 
 import {
-    MenuBook,
-    CheckCircle,
-    Bookmark,
-    Star,
     ArrowForward,
-    ImageOutlined,
-    FormatQuote
+    MenuBook,
+    AutoStories,
+    LocalLibrary
 } from '@mui/icons-material'
 
 import { useNavigate } from 'react-router-dom'
+import { viewBooksAPI } from '../services/apiServices'
 
 
-const images = {
-    hero: 'https://t3.ftcdn.net/jpg/08/15/90/80/360_F_815908053_Mfy2DJfv1iFSdL6ET9pRD5R5VzOOEu5k.jpg',
-    goal: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2rqcLwljmYVyRYzsk2Y6GW8rSccI82oWi30TgwZ0nRe3GkxrP2X3M4bte&s=10',
-    featured: 'https://media.istockphoto.com/id/1460007178/photo/library-books-on-table-and-background-for-studying-learning-and-research-in-education-school.jpg?s=612x612&w=0&k=20&c=OV_sdclWUExHy0VKPeZwyen2mO6g1NwAIBbLPT_Hd30=',
-    quote: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSLIxPmZA9-n0-TkSc2xfxqqPxOg-JUKlNo3GziNpyeOSv5idJ87jR0y0c&s=10'
-}
+const primary = '#593C32'
+const accent = '#F47745'
+const muted = '#967C70'
+const cream = '#FFF7ED'
 
-
-const continueReading = [
-    { id: 1, title: 'The Midnight Library', author: 'Matt Haig', progress: 62, cover: 'https://m.media-amazon.com/images/I/71qsovx-x6L._AC_UF1000,1000_QL80_.jpg' },
-    { id: 2, title: 'Atomic Habits', author: 'James Clear', progress: 35, cover: 'https://m.media-amazon.com/images/I/817HaeblezL._AC_UF1000,1000_QL80_.jpg' },
-    { id: 3, title: 'The Alchemist', author: 'Paulo Coelho', progress: 80, cover: 'https://m.media-amazon.com/images/I/617lxveUjYL.jpg' }
-]
-
-const recommended = [
-    { id: 11, title: 'Dune', author: 'Frank Herbert', genre: 'Fantasy', rating: 4.5, cover: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTu_UEU_t80YheLHKpeWkTNG9gJvU7vOnWee5cLj6q3QqiWeI0V1iJz6OU&s=10' },
-    { id: 12, title: 'Sapiens', author: 'Yuval Noah Harari', genre: 'Science', rating: 4.5, cover: 'https://m.media-amazon.com/images/I/713jIoMO3UL._AC_UF1000,1000_QL80_.jpg' },
-    { id: 13, title: 'Normal People', author: 'Sally Rooney', genre: 'Fiction', rating: 4, cover: 'https://m.media-amazon.com/images/S/compressed.photo.goodreads.com/books/1571423190i/41057294.jpg' },
-    { id: 14, title: 'Deep Work', author: 'Cal Newport', genre: 'Self Help', rating: 4.5, cover: 'https://gyaanstore.com/cdn/shop/files/45_2e2a7539-497a-45e2-9eed-f8d248340b91.png?v=1757578380' }
-]
-
-const reviews = [
-    { id: 1, title: 'Project Hail Mary', rating: 5, text: "Couldn't put it down. Funny, clever, and surprisingly moving." },
-    { id: 2, title: 'Educated', rating: 4, text: 'A hard but important read with beautiful writing.' }
-]
-
-const goal = { read: 12, target: 30 }
-
-const quote = {
-    text: 'A reader lives a thousand lives before he dies.',
-    author: 'George R.R. Martin'
-}
-
-
-// Shows the image if `src` is set, otherwise a dashed box where an image can go
-function ImageSlot({ src, alt, label = 'Add image', compact = false, imageOpacity = 1, sx }) {
-
-    const [failed, setFailed] = useState(false)
-
-    const showImage = Boolean(src) && !failed
-
-    return (
-
-        <Box
-            sx={{
-                position: 'relative',
-                overflow: 'hidden',
-                borderRadius: 3,
-                backgroundColor: compact && !showImage ? 'transparent' : '#FFF0E8',
-                border: showImage || compact ? 'none' : '2px dashed #F6C9B8',
-                color: '#F47745',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0.5,
-                textAlign: 'center',
-                px: 1,
-                ...sx
-            }}
-        >
-
-            {showImage ? (
-
-                <Box
-                    component="img"
-                    src={src}
-                    alt={alt}
-                    onError={() => setFailed(true)}
-                    sx={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: imageOpacity
-                    }}
-                />
-
-            ) : compact ? null : (
-
-                <>
-                    <ImageOutlined />
-                    <Typography variant="caption" sx={{ color: '#967C70' }}>
-                        {failed ? "Image didn't load. Check the address" : label}
-                    </Typography>
-                </>
-
-            )}
-
-        </Box>
-
-    )
-
-}
-
-function SectionHeading({ title, actionLabel, onAction }) {
-
-    return (
-
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 3
-            }}
-        >
-
-            <Typography
-                variant="h5"
-                fontWeight="bold"
-                sx={{ color: '#593C32' }}
-            >
-                {title}
-            </Typography>
-
-            {actionLabel && (
-
-                <Button
-                    onClick={onAction}
-                    endIcon={<ArrowForward />}
-                    sx={{
-                        color: '#F47745',
-                        textTransform: 'none',
-                        '&:hover': { backgroundColor: '#FFF0E8' }
-                    }}
-                >
-                    {actionLabel}
-                </Button>
-
-            )}
-
-        </Box>
-
-    )
-
-}
-
-const panelSx = {
-    border: '1px solid #E9DED3',
-    borderRadius: 3,
-    backgroundColor: '#FFFFFF'
-}
 
 function Dashboard() {
 
     const navigate = useNavigate()
 
-    // Dashboard statistics
-    const cardData = [
-        {
-            title: 'Total Books',
-            count: 24,
-            icon: <MenuBook />,
-            color: '#F47745',
-            bg: '#FFF0E8'
-        },
-        {
-            title: 'Completed',
-            count: 12,
-            icon: <CheckCircle />,
-            color: '#588157',
-            bg: '#EAF2E8'
-        },
-        {
-            title: 'Currently Reading',
-            count: 5,
-            icon: <Bookmark />,
-            color: '#D68B50',
-            bg: '#FFF3E4'
-        },
-        {
-            title: 'Average Rating',
-            count: '4.6',
-            icon: <Star />,
-            color: '#D69E36',
-            bg: '#FFF5D9'
+    const [books, setBooks] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
+
+    useEffect(() => {
+        const fetchBooks = async () => {
+            try {
+                const response = await viewBooksAPI()
+                setBooks(response.data)
+            }
+            catch (err) {
+                console.log(err)
+                setError('Unable to load books. Please check JSON Server.')
+            }
+            finally {
+                setLoading(false)
+            }
         }
+
+        fetchBooks()
+    }, [])
+
+    const latestBooks = [...books]
+        .sort((a, b) => Number(b.id) - Number(a.id))
+
+    
+
+    const authors = [
+        ...new Set(
+            books.map(book => book.author?.trim()).filter(Boolean)
+        )
     ]
 
-    const goalPercent = Math.round((goal.read / goal.target) * 100)
+    const openBook = (id) => {
+        navigate(`/view-book/${id}`)
+    }
+
+
+    // Book cover component
+    const BookCover = ({ book, height = 210 }) => (
+
+        <Box
+            component="img"
+            src={book.coverImage}
+            alt={book.title}
+            onError={(e) => {
+                e.target.style.opacity = 0
+            }}
+            sx={{
+                width: '100%',
+                height,
+                objectFit: 'contain',
+                transition: '0.3s',
+                filter: 'drop-shadow(5px 7px 5px rgba(0,0,0,0.18))'
+            }}
+        />
+
+    )
+
+
+const authorPhotos = {
+    'James Clear':
+        'https://m.media-amazon.com/images/S/amzn-author-media-prod/rec58e62v0epfogin4i1o6mu55.jpg',
+
+    'Robert Kiyosaki':
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgA3A7PvG2HRhyNo8IKH9n-CSx8ZQfFPB7MGZVNDC1YLDLNSbfoSZRbsbt&s=10',
+
+    'Paulo Coelho':
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQJ_1AXv1zN5E6MyVHnc-tQMTzIUGx_Au6__P-grs6S7g&s=10',
+
+    'Morgan Housel':
+        'https://m.media-amazon.com/images/S/amzn-author-media-prod/rtoaal9u1721n93pmiqkl7s1u1.jpg',
+
+    'J.K. Rowling': 'https://image.tmdb.org/t/p/w500/8VDx3K8NBGJDEWr4KdsGsuT8wuj.jpg'
+}
+
+
 
     return (
 
-        <Box
-            sx={{
-                p: { xs: 2, md: 4 },
-                backgroundColor: '#FFF7ED',
-                minHeight: 'calc(100vh - 75px)',
-                width: '100%'
-            }}
-        >
+        <Box sx={{ backgroundColor: cream, minHeight: '100vh' }}>
 
-            {/* Welcome Section */}
+
+            {/* HERO BANNER */}
 
             <Box
                 sx={{
-                    background: 'linear-gradient(120deg, #FCE0D2 0%, #FFF0E8 100%)',
-                    borderRadius: 4,
-                    p: { xs: 3, md: 5 },
-                    mb: 5,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: 3,
-                    flexWrap: 'wrap'
-                }}
+    backgroundImage: `
+        linear-gradient(
+            90deg,
+            rgba(255, 240, 232, 0.94),
+            rgba(255, 240, 232, 0.78)
+        ),
+        url('https://images.openai.com/static-rsc-4/8SU9U2gueJ-lzIqsUfqkUwZhiQzcZ2hAaI3JBZgkUwQpKjAcdq76LldBKY9CHrc14xgwAc-B6tVoz4zWeugYpizJv5ehG_kdvda7ssYFS5fxdcc_CwwATxypgYRI0ryT7MYskzD_kaBQz9rla8g38j7pM7h_QyJ3GHLFft2gwaepuJnCRq00KmdkogyVvSdv?purpose=fullsize')
+    `,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat',
+
+    minHeight: { xs: 430, md: 440 },
+    px: { xs: 3, md: 9 },
+    py: { xs: 5, md: 6 },
+
+    display: 'grid',
+    gridTemplateColumns: {
+        xs: '1fr',
+        md: '1fr 1fr'
+    },
+    alignItems: 'center',
+    gap: 3,
+    overflow: 'hidden'
+}}
             >
 
-                <Box sx={{ maxWidth: 520 }}>
-
-                    <Typography
-                        variant="h4"
-                        fontWeight="bold"
-                        sx={{ color: '#593C32' }}
-                    >
-                        Welcome to BookVerse!
-                    </Typography>
+                <Box sx={{ maxWidth: 480, zIndex: 1 }}>
 
                     <Typography
                         sx={{
-                            color: '#967C70',
-                            mt: 1.5,
-                            mb: 2.5
+                            color: accent,
+                            fontWeight: 'bold',
+                            letterSpacing: 2,
+                            fontSize: 13,
+                            mb: 2
                         }}
                     >
-                        Every book is a new adventure. Continue your reading journey!
+                        WELCOME TO BOOKVERSE
                     </Typography>
 
-                    <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-
-                        <Button
-                            variant="contained"
-                            endIcon={<ArrowForward />}
-                            onClick={() => navigate('/books')}
-                            sx={{
-                                backgroundColor: '#F47745',
-                                borderRadius: 2,
-                                px: 3,
-                                py: 1,
-                                textTransform: 'none',
-                                '&:hover': {
-                                    backgroundColor: '#E76535'
-                                }
-                            }}
-                        >
-                            Explore My Books
-                        </Button>
-
-                        <Button
-                            variant="outlined"
-                            onClick={() => navigate('/add-book')}
-                            sx={{
-                                color: '#F47745',
-                                borderColor: '#F47745',
-                                borderRadius: 2,
-                                px: 3,
-                                py: 1,
-                                textTransform: 'none',
-                                '&:hover': {
-                                    backgroundColor: '#FFF0E8',
-                                    borderColor: '#E76535'
-                                }
-                            }}
-                        >
-                            Add a Book
-                        </Button>
-
-                    </Box>
-
-                </Box>
-
-                {/* Hero image */}
-
-                <ImageSlot
-                    src={images.hero}
-                    alt="Reading illustration"
-                    label="Hero image"
-                    sx={{
-                        width: { xs: '100%', md: 280 },
-                        height: { xs: 160, md: 180 },
-                        borderRadius: 4,
-                        backgroundColor: '#F6C9B8'
-                    }}
-                />
-
-            </Box>
-
-            {/* Reading Overview Heading */}
-
-            <Typography
-                variant="h5"
-                fontWeight="bold"
-                sx={{
-                    color: '#593C32',
-                    mb: 3
-                }}
-            >
-                Reading Overview
-            </Typography>
-
-            {/* Statistics Cards */}
-
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: 'repeat(2, minmax(0, 1fr))',
-                        lg: 'repeat(4, minmax(0, 1fr))'
-                    },
-                    gap: 3,
-                    width: '100%',
-                    mb: 5
-                }}
-            >
-
-                {cardData.map((item) => (
-
-                    <Card
-                        key={item.title}
-                        elevation={0}
+                    <Typography
                         sx={{
-                            width: '100%',
-                            minWidth: 0,
-                            border: '1px solid #E9DED3',
-                            borderRadius: 3,
-                            backgroundColor: '#FFFFFF',
-                            transition: '0.3s',
+                            fontFamily: '"Playfair Display", serif',
+                            color: primary,
+                            fontWeight: 'bold',
+                            fontSize: {
+                                xs: 37,
+                                sm: 45,
+                                md: 53
+                            },
+                            lineHeight: 1.12
+                        }}
+                    >
+                        The World of
+                        <br />
+                        Books Awaits
+                        <br />
+                        <Box component="span" sx={{ color: accent }}>
+                            You!
+                        </Box>
+                    </Typography>
 
+                    <Typography
+                        sx={{
+                            color: muted,
+                            lineHeight: 1.8,
+                            mt: 2,
+                            mb: 3,
+                            maxWidth: 390
+                        }}
+                    >
+                        Discover wonderful stories, explore new
+                        authors and find your next favourite book
+                        in your personal reading world.
+                    </Typography>
+
+                    <Button
+                        variant="contained"
+                        onClick={() => navigate('/books')}
+                        endIcon={<ArrowForward />}
+                        sx={{
+                            backgroundColor: accent,
+                            borderRadius: 5,
+                            px: 3,
+                            py: 1.2,
+                            textTransform: 'none',
                             '&:hover': {
-                                transform: 'translateY(-4px)',
-                                boxShadow: '0 8px 20px rgba(89,60,50,0.08)'
+                                backgroundColor: primary
                             }
                         }}
                     >
+                        Explore Books
+                    </Button>
 
-                        <CardContent sx={{ p: 3 }}>
+                </Box>
+
+
+                {/* Overlapping book covers */}
+
+                <Box
+                    sx={{
+                        position: 'relative',
+                        height: { xs: 220, md: 330 },
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+
+                    {books.length > 0 ? (
+
+                        <>
+
+                            {books.slice(0, 3).map((book, index) => (
+
+                                <Box
+                                    key={book.id}
+                                    onClick={() => openBook(book.id)}
+                                    sx={{
+                                        position: 'absolute',
+                                        width: {
+                                            xs: 115,
+                                            md: 160
+                                        },
+                                        height: {
+                                            xs: 165,
+                                            md: 230
+                                        },
+                                        backgroundColor: '#FFFFFF',
+                                        padding: 1,
+                                        boxShadow: '0 12px 25px rgba(89,60,50,0.2)',
+                                        cursor: 'pointer',
+                                        transform: [
+                                            'rotate(-12deg) translateX(-105px)',
+                                            'rotate(2deg) translateY(-12px)',
+                                            'rotate(12deg) translateX(105px)'
+                                        ][index],
+                                        zIndex: index + 1,
+                                        transition: '0.3s',
+                                        '&:hover': {
+                                            transform: 'rotate(0deg) translateY(-15px)',
+                                            zIndex: 5
+                                        }
+                                    }}
+                                >
+
+                                    <BookCover book={book} height="100%" />
+
+                                </Box>
+
+                            ))}
+
+                        </>
+
+                    ) : (
+
+                        <LocalLibrary
+                            sx={{
+                                fontSize: 160,
+                                color: '#D9A999'
+                            }}
+                        />
+
+                    )}
+
+                </Box>
+
+            </Box>
+
+
+            {/* MAIN CONTENT */}
+
+            <Box
+                sx={{
+                    maxWidth: 1450,
+                    mx: 'auto',
+                    px: { xs: 2.5, md: 6 },
+                    py: 6
+                }}
+            >
+
+                {loading && (
+                    <Box sx={{ textAlign: 'center', py: 5 }}>
+                        <CircularProgress sx={{ color: accent }} />
+                    </Box>
+                )}
+
+                {error && (
+                    <Typography color="error" textAlign="center">
+                        {error}
+                    </Typography>
+                )}
+
+
+                {!loading && !error && (
+
+                    <>
+
+
+                        {/* TRENDING BOOKS */}
+
+                        <Box sx={{ mb: 7 }}>
 
                             <Box
                                 sx={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    gap: 1
+                                    mb: 3
                                 }}
                             >
 
-                                {/* Card Details */}
-
-                                <Box sx={{ minWidth: 0 }}>
+                                <Box>
+                                    <Typography
+                                        variant="h5"
+                                        fontWeight="bold"
+                                        sx={{
+                                            color: primary,
+                                            fontFamily: '"Playfair Display", serif'
+                                        }}
+                                    >
+                                        Trending on BookVerse
+                                    </Typography>
 
                                     <Typography
                                         variant="body2"
+                                        sx={{ color: muted, mt: 0.5 }}
+                                    >
+                                        Books worth adding to your reading list
+                                    </Typography>
+                                </Box>
+
+                                <Button
+                                    onClick={() => navigate('/books')}
+                                    endIcon={<ArrowForward />}
+                                    sx={{
+                                        color: accent,
+                                        textTransform: 'none'
+                                    }}
+                                >
+                                    View More
+                                </Button>
+
+                            </Box>
+
+
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: {
+                                        xs: 'repeat(2, 1fr)',
+                                        sm: 'repeat(3, 1fr)',
+                                        md: 'repeat(5, 1fr)'
+                                    },
+                                    gap: { xs: 2, md: 3 }
+                                }}
+                            >
+
+                                {latestBooks.slice(0, 5).map(book => (
+
+                                    <Box
+                                        key={book.id}
+                                        onClick={() => openBook(book.id)}
                                         sx={{
-                                            color: '#967C70',
-                                            whiteSpace: 'nowrap'
+                                            cursor: 'pointer',
+                                            minWidth: 0,
+                                            '&:hover img': {
+                                                transform: 'translateY(-5px)'
+                                            }
                                         }}
                                     >
-                                        {item.title}
+
+                                        <Box
+                                            sx={{
+                                                height: 205,
+                                                backgroundColor: '#F5EAE3',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                p: 2,
+                                                mb: 1.5
+                                            }}
+                                        >
+                                            <BookCover book={book} height="100%" />
+                                        </Box>
+
+                                        <Typography
+                                            fontWeight="bold"
+                                            fontSize={14}
+                                            sx={{ color: primary }}
+                                            noWrap
+                                        >
+                                            {book.title}
+                                        </Typography>
+
+                                        <Typography
+                                            variant="caption"
+                                            sx={{ color: muted }}
+                                        >
+                                            {book.author?.trim()}
+                                        </Typography>
+
+                                        <Rating
+                                            value={Number(book.rating) || 0}
+                                            readOnly
+                                            size="small"
+                                            sx={{ display: 'flex', color: accent }}
+                                        />
+
+                                    </Box>
+
+                                ))}
+
+                            </Box>
+
+                            {books.length === 0 && (
+                                <Typography color={muted}>
+                                    Your book collection is empty. Add a book to get started.
+                                </Typography>
+                            )}
+
+                        </Box>
+
+
+
+                        {/* PROMOTIONAL BANNERS */}
+
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: {
+                                    xs: '1fr',
+                                    md: '1fr 1fr'
+                                },
+                                gap: 2,
+                                mb: 8
+                            }}
+                        >
+
+                            <Box
+                                sx={{
+                                    backgroundColor: '#F4DDD5',
+                                    p: 3,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    minHeight: 160,
+                                    gap: 2
+                                }}
+                            >
+
+                                <Box>
+                                    <Typography
+                                        sx={{
+                                            color: accent,
+                                            fontSize: 11,
+                                            fontWeight: 'bold',
+                                            letterSpacing: 1
+                                        }}
+                                    >
+                                        YOUR READING JOURNEY
                                     </Typography>
 
                                     <Typography
-                                        variant="h4"
+                                        variant="h6"
                                         fontWeight="bold"
                                         sx={{
+                                            color: primary,
                                             mt: 1,
-                                            color: '#593C32'
+                                            fontFamily: '"Playfair Display", serif'
                                         }}
                                     >
-                                        {item.count}
+                                        Every Page
+                                        <br />
+                                        Tells a Story
                                     </Typography>
 
+                                    <Button
+                                        onClick={() => navigate('/books')}
+                                        size="small"
+                                        sx={{
+                                            mt: 1,
+                                            backgroundColor: accent,
+                                            color: '#FFFFFF',
+                                            borderRadius: 4,
+                                            textTransform: 'none',
+                                            '&:hover': {
+                                                backgroundColor: primary
+                                            }
+                                        }}
+                                    >
+                                        Browse Books
+                                    </Button>
                                 </Box>
 
-                                {/* Card Icon */}
-
-                                <Box
+                                <AutoStories
                                     sx={{
-                                        backgroundColor: item.bg,
-                                        color: item.color,
-                                        p: 1.8,
-                                        borderRadius: 3,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0
-                                    }}
-                                >
-                                    {item.icon}
-                                </Box>
-
-                            </Box>
-
-                        </CardContent>
-
-                    </Card>
-
-                ))}
-
-            </Box>
-
-            {/* Continue Reading + Yearly Goal */}
-
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.5fr) minmax(0, 1fr)' },
-                    gap: 3,
-                    mb: 5
-                }}
-            >
-
-                <Box sx={{ ...panelSx, p: 3 }}>
-
-                    <SectionHeading
-                        title="Continue Reading"
-                        actionLabel="See all"
-                        onAction={() => navigate('/books')}
-                    />
-
-                    {continueReading.map((book, index) => (
-
-                        <Box
-                            key={book.id}
-                            sx={{
-                                display: 'flex',
-                                gap: 2,
-                                alignItems: 'center',
-                                py: 2,
-                                borderTop: index === 0 ? 'none' : '1px solid #E9DED3'
-                            }}
-                        >
-
-                            <ImageSlot
-                                src={book.cover}
-                                alt={`${book.title} cover`}
-                                label="Cover"
-                                sx={{ width: 64, height: 92, flexShrink: 0, borderRadius: 2 }}
-                            />
-
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-
-                                <Typography fontWeight="bold" sx={{ color: '#593C32' }} noWrap>
-                                    {book.title}
-                                </Typography>
-
-                                <Typography variant="body2" sx={{ color: '#967C70' }}>
-                                    By {book.author}
-                                </Typography>
-
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={book.progress}
-                                    sx={{
-                                        mt: 1.5,
-                                        height: 8,
-                                        borderRadius: 4,
-                                        backgroundColor: '#FFF0E8',
-                                        '& .MuiLinearProgress-bar': {
-                                            backgroundColor: '#F47745',
-                                            borderRadius: 4
-                                        }
+                                        fontSize: 85,
+                                        color: '#C98B79',
+                                        opacity: 0.8
                                     }}
                                 />
 
                             </Box>
 
-                            <Typography fontWeight="bold" sx={{ color: '#F47745', width: 44, textAlign: 'right' }}>
-                                {book.progress}%
-                            </Typography>
 
-                        </Box>
+                            <Box
+                                sx={{
+                                    backgroundColor:  '#FFE5D4',
+                                    p: 3,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    minHeight: 160,
+                                    gap: 2
+                                }}
+                            >
 
-                    ))}
+                                <Box>
+                                    <Typography
+                                        sx={{
+                                            color: accent,
+                                            fontSize: 11,
+                                            fontWeight: 'bold',
+                                            letterSpacing: 1
+                                        }}
+                                    >
+                                        MAKE ROOM FOR STORIES
+                                    </Typography>
 
-                </Box>
+                                    <Typography
+                                        variant="h6"
+                                        fontWeight="bold"
+                                        sx={{
+                                            color: primary,
+                                            mt: 1,
+                                            fontFamily: '"Playfair Display", serif'
+                                        }}
+                                    >
+                                        Add a New
+                                        <br />
+                                        Favourite Book
+                                    </Typography>
 
-                {/* Yearly goal */}
+                                    <Button
+                                        onClick={() => navigate('/add-book')}
+                                        size="small"
+                                        sx={{
+                                            mt: 1,
+                                           backgroundColor: accent,
+                                           color: '#FFFFFF',
+                                            borderRadius: 4,
+                                            textTransform: 'none',
+                                            '&:hover': {
+                                                backgroundColor: '#F8E5DE'
+                                            }
+                                        }}
+                                    >
+                                        Add Book
+                                    </Button>
+                                </Box>
 
-                <Box sx={{ ...panelSx, p: 3, display: 'flex', flexDirection: 'column' }}>
-
-                    <Typography
-                        variant="h5"
-                        fontWeight="bold"
-                        sx={{ color: '#593C32', mb: 3 }}
-                    >
-                        Reading Goal
-                    </Typography>
-
-                    <ImageSlot
-                        src={images.goal}
-                        alt="Reading goal"
-                        label="Goal image"
-                        sx={{ width: '100%', height: 150, mb: 3 }}
-                    />
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-
-                        <Typography fontWeight="bold" sx={{ color: '#593C32', fontSize: '1.4rem' }}>
-                            {goal.read} of {goal.target} books
-                        </Typography>
-
-                        <Typography fontWeight="bold" sx={{ color: '#F47745' }}>
-                            {goalPercent}%
-                        </Typography>
-
-                    </Box>
-
-                    <LinearProgress
-                        variant="determinate"
-                        value={goalPercent}
-                        sx={{
-                            mt: 1.5,
-                            height: 10,
-                            borderRadius: 5,
-                            backgroundColor: '#FFF0E8',
-                            '& .MuiLinearProgress-bar': {
-                                backgroundColor: '#F47745',
-                                borderRadius: 5
-                            }
-                        }}
-                    />
-
-                    <Typography variant="body2" sx={{ color: '#967C70', mt: 1.5, mb: 2.5 }}>
-                        {goal.target - goal.read} more books to reach your yearly goal.
-                    </Typography>
-
-                    <Button
-                        onClick={() => navigate('/goals')}
-                        sx={{
-                            mt: 'auto',
-                            alignSelf: 'flex-start',
-                            color: '#F47745',
-                            textTransform: 'none',
-                            px: 0,
-                            '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
-                        }}
-                    >
-                        View Reading Goals
-                    </Button>
-
-                </Box>
-
-            </Box>
-
-            {/* Recommended For You */}
-
-            <SectionHeading
-                title="Recommended for You"
-                actionLabel="Browse books"
-                onAction={() => navigate('/books')}
-            />
-
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                        xs: 'repeat(2, minmax(0, 1fr))',
-                        md: 'repeat(4, minmax(0, 1fr))'
-                    },
-                    gap: 3,
-                    mb: 5
-                }}
-            >
-
-                {recommended.map((book) => (
-
-                    <Card
-                        key={book.id}
-                        elevation={0}
-                        sx={{
-                            ...panelSx,
-                            overflow: 'hidden',
-                            transition: '0.3s',
-                            '&:hover': {
-                                transform: 'translateY(-4px)',
-                                boxShadow: '0 8px 20px rgba(89,60,50,0.08)'
-                            }
-                        }}
-                    >
-
-                        <ImageSlot
-                            src={book.cover}
-                            alt={`${book.title} cover`}
-                            label="Book cover"
-                            sx={{ width: '100%', aspectRatio: '3 / 4', borderRadius: 0 }}
-                        />
-
-                        <CardContent sx={{ p: 2 }}>
-
-                            <Typography fontWeight="bold" sx={{ color: '#593C32' }} noWrap>
-                                {book.title}
-                            </Typography>
-
-                            <Typography variant="body2" sx={{ color: '#967C70', mt: 0.5 }} noWrap>
-                                By {book.author}
-                            </Typography>
-
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 1.5, gap: 1, flexWrap: 'wrap' }}>
-
-                                <Rating value={book.rating} precision={0.5} readOnly size="small" sx={{ color: '#F47745' }} />
-
-                                <Chip
-                                    label={book.genre}
-                                    size="small"
-                                    sx={{ backgroundColor: '#F3E7D9', color: '#6B4F3B' }}
+                                <MenuBook
+                                    sx={{
+                                        fontSize: 85,
+                                        color: '#C98B79'
+                                    }}
                                 />
 
                             </Box>
 
-                        </CardContent>
-
-                    </Card>
-
-                ))}
-
-            </Box>
-
-            {/* Featured Book Banner */}
-
-            <Box
-                sx={{
-                    ...panelSx,
-                    overflow: 'hidden',
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: '1fr 1.2fr' },
-                    mb: 5
-                }}
-            >
-
-                <ImageSlot
-                    src={images.featured}
-                    alt="Featured book"
-                    label="Featured image"
-                    sx={{ width: '100%', minHeight: { xs: 200, md: 280 }, borderRadius: 0 }}
-                />
-
-                <Box sx={{ p: { xs: 3, md: 5 }, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-
-                    <Chip
-                        label="Book of the month"
-                        size="small"
-                        sx={{ alignSelf: 'flex-start', backgroundColor: '#FFF0E8', color: '#F47745', fontWeight: 'bold', mb: 2 }}
-                    />
-
-                    <Typography variant="h5" fontWeight="bold" sx={{ color: '#593C32' }}>
-                        Pick a book for this month
-                    </Typography>
-
-                    <Typography sx={{ color: '#967C70', mt: 1.5, mb: 3 }}>
-                        Choose one book to finish by the end of the month. Small goals keep your reading habit going.
-                    </Typography>
-
-                    <Button
-                        variant="contained"
-                        endIcon={<ArrowForward />}
-                        onClick={() => navigate('/books')}
-                        sx={{
-                            alignSelf: 'flex-start',
-                            backgroundColor: '#F47745',
-                            borderRadius: 2,
-                            px: 3,
-                            textTransform: 'none',
-                            '&:hover': { backgroundColor: '#E76535' }
-                        }}
-                    >
-                        Choose a book
-                    </Button>
-
-                </Box>
-
-            </Box>
-
-            {/* Recent Reviews + Quote */}
-
-            <Box
-                sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1.5fr) minmax(0, 1fr)' },
-                    gap: 3
-                }}
-            >
-
-                <Box sx={{ ...panelSx, p: 3 }}>
-
-                    <SectionHeading
-                        title="Recent Reviews"
-                        actionLabel="All reviews"
-                        onAction={() => navigate('/reviews')}
-                    />
-
-                    {reviews.map((review, index) => (
-
-                        <Box
-                            key={review.id}
-                            sx={{
-                                py: 2,
-                                borderTop: index === 0 ? 'none' : '1px solid #E9DED3'
-                            }}
-                        >
-
-                            <Typography fontWeight="bold" sx={{ color: '#593C32' }}>
-                                {review.title}
-                            </Typography>
-
-                            <Rating value={review.rating} readOnly size="small" sx={{ color: '#F47745', mt: 0.5 }} />
-
-                            <Typography variant="body2" sx={{ color: '#967C70', mt: 1 }}>
-                                {review.text}
-                            </Typography>
-
                         </Box>
 
-                    ))}
+                        
+{/* DISCOVER THE AUTHORS */}
 
-                </Box>
+<Box sx={{ mb: 8 }}>
 
-                {/* Quote with image */}
+    <Typography
+        variant="h4"
+        textAlign="center"
+        fontWeight="bold"
+        sx={{
+            color: primary,
+            fontFamily: '"Playfair Display", serif',
+            mb: 1
+        }}
+    >
+        Discover the Authors
+    </Typography>
+
+    <Typography
+        textAlign="center"
+        sx={{ color: muted, mb: 4 }}
+    >
+        Meet the talented authors behind your favourite books
+    </Typography>
+
+    <Box
+        sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: { xs: 3, md: 5 }
+        }}
+    >
+
+       {authors.map((author) => (
+
+            <Box
+                key={author}
+                sx={{
+                    width: 160,
+                    textAlign: 'center'
+                }}
+            >
 
                 <Box
                     sx={{
-                        position: 'relative',
+                        width: 125,
+                        height: 125,
+                        borderRadius: '50%',
                         overflow: 'hidden',
-                        borderRadius: 3,
-                        minHeight: 260,
-                        background: 'linear-gradient(120deg, #FCE0D2 0%, #FFF0E8 100%)',
-                        p: 4,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        justifyContent: 'space-between'
+                        mx: 'auto',
+                        mb: 2,
+                        backgroundColor: '#FFE5D4',
+                        border: '4px solid #FFF0E8',
+                        boxShadow: '0 5px 15px rgba(89,60,50,0.12)'
                     }}
                 >
 
-                    <ImageSlot
-                        src={images.quote}
-                        alt="Quote background"
-                        compact
-                        imageOpacity={0.25}
-                        sx={{ position: 'absolute', inset: 0, borderRadius: 0 }}
+                    <Box
+                        component="img"
+                        src={authorPhotos[author]}
+                        alt={author}
+                        onError={(e) => {
+                            e.target.style.display = 'none'
+                        }}
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                        }}
                     />
 
-                    <FormatQuote sx={{ position: 'relative', fontSize: 48, color: '#F47745' }} />
-
-                    <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        sx={{ position: 'relative', color: '#593C32' }}
-                    >
-                        {quote.text}
-                    </Typography>
-
-                    <Typography sx={{ position: 'relative', color: '#967C70', mt: 2 }}>
-                        {quote.author}
-                    </Typography>
-
                 </Box>
+
+                <Typography
+                    fontWeight="bold"
+                    sx={{ color: primary }}
+                >
+                    {author}
+                </Typography>
+
+                <Typography
+                    variant="caption"
+                    sx={{ color: muted }}
+                >
+                    Author
+                </Typography>
+
+            </Box>
+
+        ))}
+
+    </Box>
+
+</Box>
+
+
+
+                       
+                    </>
+
+                )}
+
+
+                
 
             </Box>
 
         </Box>
-
     )
-
 }
 
 export default Dashboard

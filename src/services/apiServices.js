@@ -94,3 +94,16 @@ export const viewReportDownloadsAPI = async () => {
 export const deleteReportDownloadAPI = async (id) => {
     return await axiosServices('DELETE', `/downloads/${id}`, {})
 }
+
+
+export const viewUsersAPI = async () => {
+    return await axiosServices('GET', '/users', {})
+}
+
+export const registerUserAPI = async (reqBody) => {
+    return await axiosServices('POST', '/users', reqBody)
+}
+
+export const loginUserAPI = async (email) => {
+    return await axiosServices('GET', `/users?email=${email}`, {})
+}

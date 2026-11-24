@@ -17,6 +17,8 @@ import {
 } from '@mui/icons-material'
 
 import { NavLink } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+
 
 function Header() {
 
@@ -28,6 +30,13 @@ function Header() {
         { title: 'Reading Goals', path: '/goals' },
         { title: 'Reports', path: '/reports' }
     ]
+
+    const navigate = useNavigate()
+
+    const handleLogout = () => {
+    localStorage.removeItem('loggedUser')
+    navigate('/login')
+   }
 
     return (
 
@@ -128,6 +137,16 @@ function Header() {
                         </Button>
 
                     ))}
+                    <Button
+                    onClick={handleLogout}
+                    sx={{ color: '#Fff0E8',
+                        backgroundColor:'#F47745',
+                         textTransform: 'none',
+                         fontWeight: 'bold'
+                     }}
+                    >
+                    Logout
+                    </Button>
 
                 </Box>
 

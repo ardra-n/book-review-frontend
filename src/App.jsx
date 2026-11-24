@@ -17,6 +17,8 @@ import Pnf from './pages/Pnf'
 import AddBook from './pages/AddBook'
 import EditBook from './pages/EditBook'
 import ViewBook from './pages/ViewBook'
+import Register from './pages/Register'
+import LoginPage from './pages/Login'
 
 function App() {
 
@@ -62,7 +64,11 @@ function App() {
 
                     <Route path="/edit-book/:id" element={<EditBook />} />
 
+                    <Route path="/register" element={<Register />} />
+
                     <Route path="*" element={<Pnf />} />
+
+                    <Route path="/login" element={<LoginPage />} />
 
                 </Routes>
 
